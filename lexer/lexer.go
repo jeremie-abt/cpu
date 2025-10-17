@@ -147,8 +147,6 @@ func (i *ImplLexer) NextToken() *Token {
 	return &tok
 }
 
-// lEXER utils
-
 // nextChar simple iteration for the current character.
 func (i *ImplLexer) nextChar() {
 	if i.rp >= len(i.input) {
@@ -267,43 +265,11 @@ func (i *ImplLexer) skipComment() {
 	}
 }
 
-// TODO(hotpath): Essayer de faire de l'internalisation
-var keywords = map[string]TokenType{
-	"MOV":  TokenInstruction,
-	"ADD":  TokenInstruction,
-	"SUB":  TokenInstruction,
-	"MUL":  TokenInstruction,
-	"DIV":  TokenInstruction,
-	"PUSH": TokenInstruction,
-	"POP":  TokenInstruction,
-	"JMP":  TokenInstruction,
-	"JE":   TokenInstruction,
-	"JNE":  TokenInstruction,
-	"CALL": TokenInstruction,
-	"RET":  TokenInstruction,
-	"CMP":  TokenInstruction,
-	"HALT": TokenInstruction,
-
-	"R0": TokenRegister,
-	"R1": TokenRegister,
-	"R2": TokenRegister,
-	"R3": TokenRegister,
-	"R4": TokenRegister,
-	"R5": TokenRegister,
-	"R6": TokenRegister,
-	"R7": TokenRegister,
-	"SP": TokenRegister,
-	"PC": TokenRegister,
-}
-
 func lookupIdentType(ident []byte) TokenType {
-	identUpper := bytes.ToUpper(ident)
-
-	if tokType, ok := keywords[string(identUpper)]; ok {
-		return tokType
+	if ident[0] == 'R' || ident[0] == 'E' {
+		return TokenRegister
 	}
-
-	return TokenIdentifier
+	return TokenInstruction
 }
 
 func accessInputSafe(input []byte, idx int) byte {
@@ -330,4 +296,48 @@ func lookupIdentTypeOptimized(ident []byte) TokenType {
 	}
 
 	return TokenIdentifier
+}
+
+var keywords = map[string]TokenType{
+	"MOV":  TokenInstruction,
+	"ADD":  TokenInstruction,
+	"SUB":  TokenInstruction,
+	"MUL":  TokenInstruction,
+	"DIV":  TokenInstruction,
+	"PUSH": TokenInstruction,
+	"POP":  TokenInstruction,
+	"JMP":  TokenInstruction,
+	"JE":   TokenInstruction,
+	"JNE":  TokenInstruction,
+	"CALL": TokenInstruction,
+	"RET":  TokenInstruction,
+	"CMP":  TokenInstruction,
+	"HALT": TokenInstruction,
+
+	"EAX":  TokenRegister,
+	"ECX":  TokenRegister,
+	"EDX":  TokenRegister,
+	"EBX":  TokenRegister,
+	"ESI":  TokenRegister,
+	"EDI":  TokenRegister,
+	"ESP":  TokenRegister,
+	"EBP":  TokenRegister,
+	"R8D":  TokenRegister,
+	"R9D":  TokenRegister,
+	"R10D": TokenRegister,
+	"R11D": TokenRegister,
+	"R12D": TokenRegister,
+	"R13D": TokenRegister,
+	"R14D": TokenRegister,
+	"R15D": TokenRegister,
+	"R0":   TokenRegister,
+	"R1":   TokenRegister,
+	"R2":   TokenRegister,
+	"R3":   TokenRegister,
+	"R4":   TokenRegister,
+	"R5":   TokenRegister,
+	"R6":   TokenRegister,
+	"R7":   TokenRegister,
+	"SP":   TokenRegister,
+	"PC":   TokenRegister,
 }
