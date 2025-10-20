@@ -1,0 +1,1 @@
+Projet consistant à recoder un compilateur d'assembleur simplifié, et une VM capable d'interpréter le bytecode en sortie du compilateur.
