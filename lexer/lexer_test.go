@@ -386,6 +386,17 @@ func TestNewLexer(t *testing.T) {
 				{Type: TokenEOF, Literal: []byte("")},
 			},
 		},
+		{
+			name:  "hexadecimal immediate value",
+			input: []byte("MOV ECX, 0xff"),
+			wanted: []Token{
+				{Type: TokenInstruction, Literal: []byte("MOV")},
+				{Type: TokenRegister, Literal: []byte("ECX")},
+				{Type: TokenComma, Literal: []byte(",")},
+				{Type: TokenNumber, Literal: []byte("0xff"), Value: 255},
+				{Type: TokenEOF, Literal: []byte("")},
+			},
+		},
 	}
 
 	for _, tt := range tests {

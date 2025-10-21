@@ -41,7 +41,7 @@ type Token struct {
 	Type    TokenType
 	Literal []byte
 	Column  int
-	Value   int32
+	Value   int
 	Line    int
 }
 
@@ -203,8 +203,8 @@ func isLetter(ch byte) bool {
 func (i *ImplLexer) readNumber() []byte {
 	position := i.rp
 
-	val := i.peekChar()
-	if i.value == '0' && (val == 'x' || i.peekChar() == 'X') {
+	secondVal := i.peekCharPosition(1)
+	if i.value == '0' && (secondVal == 'x' || secondVal == 'X') {
 		i.nextChar() // '0'
 		i.nextChar() // 'x'
 		for isHexDigit(i.value) {
@@ -213,7 +213,7 @@ func (i *ImplLexer) readNumber() []byte {
 		return i.input[position:i.rp]
 	}
 
-	if i.value == '0' && (i.peekChar() == 'b' || i.peekChar() == 'B') {
+	if i.value == '0' && (secondVal == 'b' || secondVal == 'B') {
 		i.nextChar() // '0'
 		i.nextChar() // 'b'
 		for i.value == '0' || i.value == '1' {
@@ -229,20 +229,20 @@ func (i *ImplLexer) readNumber() []byte {
 	return i.input[position:i.rp]
 }
 
-func (i *ImplLexer) parseNumber(literal []byte) int32 {
+func (i *ImplLexer) parseNumber(literal []byte) int {
 	if bytes.HasPrefix(literal, []byte("0x")) || bytes.HasPrefix(literal, []byte("0X")) {
 		// TODO: Je pense que si mon fichier fini par 0X ca crash, détecter ca avec le fuzz.
 		val, _ := strconv.ParseInt(string(literal[2:]), 16, 32)
-		return int32(val)
+		return int(val)
 	}
 
 	if bytes.HasPrefix(literal, []byte("0b")) || bytes.HasPrefix(literal, []byte("0B")) {
 		val, _ := strconv.ParseInt(string(literal[2:]), 2, 32)
-		return int32(val)
+		return int(val)
 	}
 
 	val, _ := strconv.ParseInt(string(literal), 10, 32)
-	return int32(val)
+	return int(val)
 }
 
 func isDigit(ch byte) bool {

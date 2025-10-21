@@ -42,7 +42,7 @@ type Instruction struct {
 	Operands []Node
 }
 
-//go:generate stringer -type=OpCode
+//go:generate stringer -type=OpCode,RegisterName -output=stringer.go
 type OpCode int
 
 const (
@@ -134,7 +134,7 @@ func (b *RegisterOperand) Children() []Node     { return nil }
 
 type ImmediateOperand struct {
 	BaseOperand
-	Value int32
+	Value int
 }
 
 func (b *ImmediateOperand) Type() NodeType       { return NodeInstruction }

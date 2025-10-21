@@ -1,0 +1,6 @@
+Implemented : MOV /
+
+TODO: SUB / MUL / DIV / PUSH / POP / JMP / JE / JNE / CALL / RET / CMP / HALT
+
+Je les implémente un par un pour le moment
+
