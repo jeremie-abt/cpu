@@ -1,6 +1,66 @@
 package parser
 
-import "testing"
+import (
+	"cpu/lexer"
+	"testing"
+
+	"github.com/google/go-cmp/cmp"
+)
+
+func TestParseMemoryOperand(t *testing.T) {
+	testCases := []struct {
+		name  string
+		input string
+		want  Node
+	}{
+		{
+			name:  "[base]",
+			input: "[EAX]",
+			want: &MemoryOperand{
+				Base: toPtr(RegisterEAX),
+			},
+		},
+		{
+			name:  "[displacement hexa]",
+			input: "[0XFF]",
+			want: &MemoryOperand{
+				Displacement: 255,
+			},
+		},
+		{
+			name:  "[displacement binary]",
+			input: "[0b11111111]",
+			want: &MemoryOperand{
+				Displacement: 255,
+			},
+		},
+		{
+			name:  "[base + displacement]",
+			input: "[EAX + 0XFF]",
+			want: &MemoryOperand{
+				Displacement: 255,
+				Base:         toPtr(RegisterEAX),
+			},
+		},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			lexerObj := lexer.NewLexer()
+			lexerObj.ResetWithInput([]byte(tt.input))
+
+			got, err := parseMemoryOperand(lexerObj)
+
+			if err != nil {
+				t.Fatalf("parseMemoryOperand() erreur inattendue = %v", err)
+			}
+
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Errorf("parseMemoryOperand() mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
 
 func TestGetOpCodeFromSlice(t *testing.T) {
 	t.Parallel()
@@ -100,10 +160,9 @@ func TestGetOpCodeFromSlice(t *testing.T) {
 }
 
 func Test_getRegisterCodeFromSlice(t *testing.T) {
-
 	t.Parallel()
 
-	tests := []struct {
+	testCases := []struct {
 		name     string
 		input    []byte
 		expected RegisterName
@@ -197,7 +256,7 @@ func Test_getRegisterCodeFromSlice(t *testing.T) {
 			" and then update the registerLengthWanted variable")
 	}
 
-	for _, tt := range tests {
+	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
 			result := getRegisterCodeFromSlice(tt.input)
 			if result != tt.expected {

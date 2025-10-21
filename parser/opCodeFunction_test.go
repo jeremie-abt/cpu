@@ -7,6 +7,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
+func toPtr[T any](i T) *T {
+	return &i
+}
+
 func Test_handleParseMov(t *testing.T) {
 	t.Parallel()
 
@@ -110,7 +114,6 @@ var tests = []struct {
 			},
 		},
 	}, {
-		// TODO: Implement memory handling
 		"with memory operand",
 		[]byte("EAX, [EBX]"),
 		[]Node{
@@ -130,7 +133,7 @@ var tests = []struct {
 							Line:   0,
 							Column: 9,
 						},
-						Base: RegisterEBX.String(),
+						Base: toPtr(RegisterEBX),
 					},
 				},
 			},
@@ -156,8 +159,8 @@ var tests = []struct {
 							Line:   0,
 							Column: 9,
 						},
-						Base:   RegisterEBP.String(),
-						Offset: 8,
+						Base:         toPtr(RegisterEBP),
+						Displacement: 8,
 					},
 				},
 			},
@@ -176,7 +179,7 @@ var tests = []struct {
 							Line:   0,
 							Column: 4,
 						},
-						Base: RegisterESI.String(),
+						Base: toPtr(RegisterESI),
 					},
 					&RegisterOperand{
 						BaseOperand: BaseOperand{
@@ -209,8 +212,8 @@ var tests = []struct {
 							Line:   0,
 							Column: 9,
 						},
-						Base:   RegisterEBP.String(),
-						Offset: -4,
+						Base:         toPtr(RegisterEBP),
+						Displacement: -4,
 					},
 				},
 			},
@@ -236,7 +239,7 @@ var tests = []struct {
 							Line:   0,
 							Column: 9,
 						},
-						Base: RegisterEBX.String(),
+						Base: toPtr(RegisterEBX),
 					},
 				},
 			},

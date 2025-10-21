@@ -4,8 +4,8 @@ package lexer
 
 import (
 	"bytes"
+	"cpu/common"
 	"maps"
-	"strconv"
 	"unique"
 )
 
@@ -51,6 +51,8 @@ func (t TokenType) GoString() string {
 
 type Lexer interface {
 	NextToken() *Token
+	Line() int
+	Column() int
 }
 
 func NewLexerWithInput(input []byte) *ImplLexer {
@@ -91,6 +93,14 @@ type ImplLexer struct {
 
 var _ Lexer = (*ImplLexer)(nil)
 
+func (i *ImplLexer) Line() int {
+	return i.line
+}
+
+func (i *ImplLexer) Column() int {
+	return i.column
+}
+
 func (i *ImplLexer) NextToken() *Token {
 	var tok Token
 
@@ -129,13 +139,13 @@ func (i *ImplLexer) NextToken() *Token {
 		tok = Token{Type: TokenEOF, Literal: []byte{eof}}
 
 	default:
-		if isLetter(i.value) {
+		if common.IsLetter(i.value) {
 			tok.Literal = i.readTextBlock()
 			tok.Type = lookupIdentType(tok.Literal)
 			return &tok
-		} else if isDigit(i.value) {
+		} else if common.IsDigit(i.value) {
 			tok.Literal = i.readNumber()
-			tok.Value = i.parseNumber(tok.Literal)
+			tok.Value = common.ParseNumber(tok.Literal)
 			tok.Type = TokenNumber
 			return &tok
 		} else {
@@ -189,15 +199,11 @@ func (i *ImplLexer) peekCharPosition(idx int) byte {
 func (i *ImplLexer) readTextBlock() []byte {
 	position := i.rp
 
-	for isLetter(i.value) || isDigit(i.value) || i.value == '_' {
+	for common.IsLetter(i.value) || common.IsDigit(i.value) || i.value == '_' {
 		i.nextChar()
 	}
 
 	return i.input[position:i.rp]
-}
-
-func isLetter(ch byte) bool {
-	return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z')
 }
 
 func (i *ImplLexer) readNumber() []byte {
@@ -207,7 +213,7 @@ func (i *ImplLexer) readNumber() []byte {
 	if i.value == '0' && (secondVal == 'x' || secondVal == 'X') {
 		i.nextChar() // '0'
 		i.nextChar() // 'x'
-		for isHexDigit(i.value) {
+		for common.IsHexDigit(i.value) {
 			i.nextChar()
 		}
 		return i.input[position:i.rp]
@@ -222,35 +228,11 @@ func (i *ImplLexer) readNumber() []byte {
 		return i.input[position:i.rp]
 	}
 
-	for isDigit(i.value) {
+	for common.IsDigit(i.value) {
 		i.nextChar()
 	}
 
 	return i.input[position:i.rp]
-}
-
-func (i *ImplLexer) parseNumber(literal []byte) int {
-	if bytes.HasPrefix(literal, []byte("0x")) || bytes.HasPrefix(literal, []byte("0X")) {
-		// TODO: Je pense que si mon fichier fini par 0X ca crash, détecter ca avec le fuzz.
-		val, _ := strconv.ParseInt(string(literal[2:]), 16, 32)
-		return int(val)
-	}
-
-	if bytes.HasPrefix(literal, []byte("0b")) || bytes.HasPrefix(literal, []byte("0B")) {
-		val, _ := strconv.ParseInt(string(literal[2:]), 2, 32)
-		return int(val)
-	}
-
-	val, _ := strconv.ParseInt(string(literal), 10, 32)
-	return int(val)
-}
-
-func isDigit(ch byte) bool {
-	return '0' <= ch && ch <= '9'
-}
-
-func isHexDigit(ch byte) bool {
-	return isDigit(ch) || ('a' <= ch && ch <= 'f') || ('A' <= ch && ch <= 'F')
 }
 
 func (i *ImplLexer) skipWhitespace() {

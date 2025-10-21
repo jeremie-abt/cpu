@@ -59,6 +59,10 @@ func handleParseMov(l lexer.Lexer) ([]Node, error) {
 		}
 	}
 
+	if source.Type == lexer.TokenOpenBracket {
+		// Parsing memory
+	}
+
 	if source.Type != lexer.TokenNumber && source.Type != lexer.TokenRegister {
 		return nil, &parsingError{
 			column:  source.Column,

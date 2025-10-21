@@ -397,6 +397,19 @@ func TestNewLexer(t *testing.T) {
 				{Type: TokenEOF, Literal: []byte("")},
 			},
 		},
+		{
+			name:  "memory operand",
+			input: []byte("MOV ECX, [EBP]"),
+			wanted: []Token{
+				{Type: TokenInstruction, Literal: []byte("MOV")},
+				{Type: TokenRegister, Literal: []byte("ECX")},
+				{Type: TokenComma, Literal: []byte(",")},
+				{Type: TokenOpenBracket, Literal: []byte("[")},
+				{Type: TokenRegister, Literal: []byte("EBP")},
+				{Type: TokenClosedBracket, Literal: []byte("]")},
+				{Type: TokenEOF, Literal: []byte("")},
+			},
+		},
 	}
 
 	for _, tt := range tests {
