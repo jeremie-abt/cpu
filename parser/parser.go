@@ -226,6 +226,7 @@ func (p *ProgramAST) parseInstruction(label []byte) *Instruction {
 }
 
 func parseMemoryOperand(l lexer.Lexer) (*MemoryOperand, error) {
+
 	baseOperand := BaseOperand{
 		Line:   l.Line(),
 		Column: l.Column(),
@@ -238,6 +239,11 @@ func parseMemoryOperand(l lexer.Lexer) (*MemoryOperand, error) {
 		}
 	}
 
+	var base *RegisterName
+	var index *RegisterName
+	var displacement int32
+	var scaleFactor uint8
+
 	tok = l.NextToken()
 	if tok.Type == lexer.TokenRegister {
 		register := getRegisterCodeFromSlice(tok.Literal)
@@ -246,53 +252,56 @@ func parseMemoryOperand(l lexer.Lexer) (*MemoryOperand, error) {
 				message: "invalid register",
 			}
 		}
-
-		tok = l.NextToken()
-		if tok.Type == lexer.TokenClosedBracket {
-			return &MemoryOperand{
-				BaseOperand: baseOperand,
-				Base:        &register,
-			}, nil
-		} else if tok.Type == lexer.TokenPlus {
-			tok = l.NextToken()
-
-			if tok.Type == lexer.TokenNumber {
-				value := tok.Value
-				tok = l.NextToken()
-
-				if tok.Type != lexer.TokenClosedBracket {
-					return nil, &parsingError{
-						message: "invalid memory operand, missing closed bracket",
-					}
-				}
-
-				return &MemoryOperand{
-					BaseOperand:  baseOperand,
-					Base:         &register,
-					Displacement: int32(value),
-				}, nil
-			} else if tok.Type == lexer.TokenRegister {
-				// Index
-			}
-		}
-	} else if tok.Type == lexer.TokenNumber {
-		value := tok.Value
+		base = &register
 
 		tok = l.NextToken()
 		if tok.Type != lexer.TokenClosedBracket {
-			return nil, &parsingError{
-				message: "invalid memory operand, missing closed bracket",
+			if tok.Type == lexer.TokenPlus {
+				tok = l.NextToken()
+
+				if tok.Type == lexer.TokenNumber {
+					displacement = int32(tok.Value)
+					tok = l.NextToken()
+				} else if tok.Type == lexer.TokenRegister {
+					idxRegister := getRegisterCodeFromSlice(tok.Literal)
+					index = &idxRegister
+
+					if register == RegisterUnknown {
+						return nil, &parsingError{
+							message: "invalid register",
+						}
+					}
+
+					tok = l.NextToken()
+					if tok.Type == lexer.TokenPlus {
+						tok = l.NextToken()
+
+						if tok.Type == lexer.TokenNumber {
+							displacement = int32(tok.Value)
+							tok = l.NextToken()
+						}
+					}
+				}
 			}
 		}
-		return &MemoryOperand{
-			BaseOperand:  baseOperand,
-			Displacement: int32(value),
-		}, nil
+	} else if tok.Type == lexer.TokenNumber {
+		displacement = int32(tok.Value)
+		tok = l.NextToken()
 	}
 
-	return nil, &parsingError{
-		message: "invalid memory operand",
+	if tok.Type != lexer.TokenClosedBracket {
+		return nil, &parsingError{
+			message: "invalid memory operand, missing closed bracket",
+		}
 	}
+
+	return &MemoryOperand{
+		BaseOperand:  baseOperand,
+		Base:         base,
+		Index:        index,
+		Displacement: displacement,
+		ScaleFactor:  scaleFactor,
+	}, nil
 }
 
 // getRegisterCodeFromSlice is a heuristic returning which register is represented by the byte slice, if you
