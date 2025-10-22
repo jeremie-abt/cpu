@@ -68,6 +68,16 @@ func TestParseMemoryOperand(t *testing.T) {
 				ScaleFactor:  4,
 			},
 		},
+		{
+			name:  "base + (index * scale) + displacement",
+			input: "[EBX + (EBP * 4) + 0xFF]",
+			want: &MemoryOperand{
+				Base:         toPtr(RegisterEBX),
+				Displacement: 255,
+				Index:        toPtr(RegisterEBP),
+				ScaleFactor:  4,
+			},
+		},
 	}
 
 	for _, tt := range testCases {

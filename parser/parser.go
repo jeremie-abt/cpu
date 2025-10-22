@@ -338,6 +338,23 @@ func parseMemoryOperand(l lexer.Lexer) (*MemoryOperand, error) {
 							tok = l.NextToken()
 						}
 					}
+				} else if tok.Type == lexer.TokenOpenParenthesis {
+					index, scaleFactor, err = parseIndexAndScale(l)
+					if err != nil {
+						return nil, &parsingError{
+							message: "invalid index * scale operation : " + err.Error(),
+						}
+					}
+
+					tok = l.NextToken()
+					if tok.Type == lexer.TokenPlus {
+						tok = l.NextToken()
+
+						if tok.Type == lexer.TokenNumber {
+							displacement = int32(tok.Value)
+							tok = l.NextToken()
+						}
+					}
 				}
 			}
 		}
