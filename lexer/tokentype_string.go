@@ -16,18 +16,20 @@ func _() {
 	_ = x[TokenInstruction-5]
 	_ = x[TokenOpenBracket-6]
 	_ = x[TokenClosedBracket-7]
-	_ = x[TokenComma-8]
-	_ = x[TokenColon-9]
-	_ = x[TokenPlus-10]
-	_ = x[TOKEN_MINUS-11]
-	_ = x[TOKEN_STAR-12]
-	_ = x[TOKEN_SLASH-13]
-	_ = x[TokenIllegal-14]
+	_ = x[TokenOpenParenthesis-8]
+	_ = x[TokenClosedpParenthesis-9]
+	_ = x[TokenComma-10]
+	_ = x[TokenColon-11]
+	_ = x[TokenPlus-12]
+	_ = x[TokenMinus-13]
+	_ = x[TokenStar-14]
+	_ = x[TokenSlash-15]
+	_ = x[TokenIllegal-16]
 }
 
-const _TokenType_name = "TokenEofTokenNewlineTokenRegisterTokenNumberTokenIdentifierTokenInstructionTokenOpenBracketTokenClosedBracketTokenCommaTokenColonTokenPlusTOKEN_MINUSTOKEN_STARTOKEN_SLASHTokenIllegal"
+const _TokenType_name = "TokenEOFTokenNewlineTokenRegisterTokenNumberTokenIdentifierTokenInstructionTokenOpenBracketTokenClosedBracketTokenOpenParenthesisTokenClosedpParenthesisTokenCommaTokenColonTokenPlusTokenMinusTokenStarTokenSlashTokenIllegal"
 
-var _TokenType_index = [...]uint8{0, 8, 20, 33, 44, 59, 75, 91, 109, 119, 129, 138, 149, 159, 170, 182}
+var _TokenType_index = [...]uint8{0, 8, 20, 33, 44, 59, 75, 91, 109, 129, 152, 162, 172, 181, 191, 200, 210, 222}
 
 func (i TokenType) String() string {
 	idx := int(i) - 0

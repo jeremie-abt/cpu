@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"cpu/common"
 	"cpu/lexer"
 	"errors"
 	"fmt"
@@ -225,6 +226,44 @@ func (p *ProgramAST) parseInstruction(label []byte) *Instruction {
 	return nil
 }
 
+func parseIndexAndScale(l lexer.Lexer) (*RegisterName, uint8, error) {
+	var index *RegisterName
+	var scale uint8
+	tok := l.NextToken()
+
+	register := getRegisterCodeFromSlice(tok.Literal)
+	if register == RegisterUnknown {
+		return nil, 0, &parsingError{
+			message: "invalid register",
+		}
+	}
+	index = &register
+
+	tok = l.NextToken()
+	if tok.Type != lexer.TokenStar {
+		return nil, 0, &parsingError{
+			message: "invalid memory operand, missing '*'",
+		}
+	}
+
+	tok = l.NextToken()
+	if tok.Type != lexer.TokenNumber {
+		return nil, 0, &parsingError{
+			message: "invalid addition, missing number",
+		}
+	}
+
+	scale = uint8(common.ParseNumber(tok.Literal))
+
+	tok = l.NextToken()
+	if tok.Type != lexer.TokenClosedpParenthesis {
+		return nil, 0, &parsingError{
+			message: "invalid memory operand, missing closed parenthesis for index and scale operation",
+		}
+	}
+	return index, scale, nil
+}
+
 func parseMemoryOperand(l lexer.Lexer) (*MemoryOperand, error) {
 
 	baseOperand := BaseOperand{
@@ -243,9 +282,27 @@ func parseMemoryOperand(l lexer.Lexer) (*MemoryOperand, error) {
 	var index *RegisterName
 	var displacement int32
 	var scaleFactor uint8
+	var err error
 
 	tok = l.NextToken()
-	if tok.Type == lexer.TokenRegister {
+	if tok.Type == lexer.TokenOpenParenthesis {
+		index, scaleFactor, err = parseIndexAndScale(l)
+		if err != nil {
+			return nil, &parsingError{
+				message: "invalid index * scale operation : " + err.Error(),
+			}
+		}
+
+		tok = l.NextToken()
+		if tok.Type == lexer.TokenPlus {
+			tok = l.NextToken()
+			if tok.Type == lexer.TokenNumber {
+				displacement = int32(tok.Value)
+				tok = l.NextToken()
+			}
+		}
+
+	} else if tok.Type == lexer.TokenRegister {
 		register := getRegisterCodeFromSlice(tok.Literal)
 		if register == RegisterUnknown {
 			return nil, &parsingError{

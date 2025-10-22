@@ -23,15 +23,17 @@ const (
 	TokenIdentifier  // labels, symboles
 	TokenInstruction // MOV, ADD, PUSH etc ... Those are cpu instructions
 
-	TokenOpenBracket   // [
-	TokenClosedBracket // ]
-	TokenComma         // ,
-	TokenColon         // :
+	TokenOpenBracket        // [
+	TokenClosedBracket      // ]
+	TokenOpenParenthesis    // (
+	TokenClosedpParenthesis // )
+	TokenComma              // ,
+	TokenColon              // :
 
-	TokenPlus   // +
-	TOKEN_MINUS // -
-	TOKEN_STAR  // *
-	TOKEN_SLASH // /
+	TokenPlus  // +
+	TokenMinus // -
+	TokenStar  // *
+	TokenSlash // /
 
 	TokenIllegal // Error token
 )
@@ -128,7 +130,12 @@ func (i *ImplLexer) NextToken() *Token {
 
 	case ']':
 		tok = Token{Type: TokenClosedBracket, Literal: literal}
-
+	case '(':
+		tok = Token{Type: TokenOpenParenthesis, Literal: literal}
+	case ')':
+		tok = Token{Type: TokenClosedpParenthesis, Literal: literal}
+	case '*':
+		tok = Token{Type: TokenStar, Literal: literal}
 	case '+':
 		tok = Token{Type: TokenPlus, Literal: literal}
 	case ';':
