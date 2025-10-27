@@ -30,6 +30,24 @@ func handleParseMov(l lexer.Lexer) ([]Node, error) {
 	if destination.Type == lexer.TokenInstruction && bytes.Equal(destination.Literal, []byte("MOV")) {
 		destination = l.NextToken()
 	}
+	// The destination is a memory operand
+	if destination.Type == lexer.TokenOpenBracket {
+		response, err := parseMemoryOperand(l)
+		if err != nil {
+			return nil, err
+		}
+
+		operands = append(operands, response)
+	} else if destination.Type == lexer.TokenRegister {
+		operands = append(operands, &RegisterOperand{
+			Name: getRegisterCodeFromSlice(destination.Literal),
+			BaseOperand: BaseOperand{
+				Line:   destination.Line,
+				Column: destination.Column,
+			},
+		})
+	}
+
 	comma := l.NextToken()
 	source := l.NextToken()
 
@@ -57,24 +75,6 @@ func handleParseMov(l lexer.Lexer) ([]Node, error) {
 			message:     "missing operand",
 			instruction: OpCodeMOV,
 		}
-	}
-
-	if destination.Type != lexer.TokenRegister {
-		return nil, &parsingError{
-			column:  source.Column,
-			line:    source.Line,
-			message: "invalid source operand, must be a number or a register",
-		}
-	}
-
-	if destination.Type == lexer.TokenRegister {
-		operands = append(operands, &RegisterOperand{
-			Name: getRegisterCodeFromSlice(destination.Literal),
-			BaseOperand: BaseOperand{
-				Line:   destination.Line,
-				Column: destination.Column,
-			},
-		})
 	}
 
 	if source.Type == lexer.TokenOpenBracket {

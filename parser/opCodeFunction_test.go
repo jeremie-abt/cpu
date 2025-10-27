@@ -33,6 +33,11 @@ func Test_handleParseMov(t *testing.T) {
 			if diff := cmp.Diff(got, tt.want); diff != "" {
 				t.Errorf("handleParseMov() mismatch (-want +got):\n%s", diff)
 			}
+
+			tok := lexerObj.NextToken()
+			if tok.Type != lexer.TokenEOF {
+				t.Fatalf("got token that is not EOF")
+			}
 		})
 	}
 }
@@ -182,7 +187,7 @@ var tests = []struct {
 			},
 		},
 	},
-	/*{
+	{
 		"memory from register",
 		[]byte("[ESI], EAX"),
 		[]Node{
@@ -207,7 +212,7 @@ var tests = []struct {
 				},
 			},
 		},
-	},*/
+	},
 	{
 		"SIB addressing",
 		[]byte("EAX, [EBX+(ECX*4)]"),
