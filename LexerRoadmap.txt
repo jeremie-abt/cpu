@@ -1,0 +1,85 @@
+# Lexer (Analyseur Lexical) - Spécification Complète
+
+## 1. Qu'est-ce qu'un Lexer ?
+
+Le Lexer est la **première étape** de la compilation/interprétation. Son rôle unique :
+
+Il est possible qu'il se retrouve à gérer un tout petit peu de parsing, sur des cas comme '5 +', ou il manque
+un int pour compléter etc ...
+
+Mais ce n'est pas du tout son rôle, l'idée est de confiner chaque package à un rôle unique pour la maintenabilité.
+
+**Transformer un flux de caractères → en flux de tokens**
+
+```
+Input (texte brut):
+"MOV R0, 42"
+
+Output (tokens):
+[INSTRUCTION:MOV] [REGISTER:R0] [COMMA] [NUMBER:42]
+```
+
+---
+
+## 2. Le scope EXACT du Lexer
+
+### ✅ Ce que fait le Lexer (et UNIQUEMENT ça)
+
+1. **Lire caractère par caractère**
+2. **Identifier les motifs (patterns)**
+3. **Créer des tokens typés**
+4. **Ignorer les whitespaces et commentaires**
+5. **Gérer les erreurs lexicales basiques** (caractère invalide)
+
+### ❌ Ce que le Lexer NE FAIT PAS
+
+1. **Ne vérifie PAS la syntaxe**
+   - `MOV R0 R1 R2` → tokens valides, mais syntaxe invalide (ça, c'est le Parser)
+
+2. **Ne vérifie PAS la sémantique**
+   - `MOV R99, 42` → tokens valides, mais R99 n'existe pas (ça, c'est le Validator)
+
+3. **Ne résout PAS les labels**
+   - `JMP loop` → crée juste [INSTRUCTION:JMP] [IDENTIFIER:loop]
+   - La résolution de l'adresse, c'est le Parser/Assembler
+
+4. **Ne calcule PAS les expressions**
+   - `MOV R0, 10+5` → [INSTRUCTION:MOV] [REGISTER:R0] [NUMBER:10] [PLUS] [NUMBER:5]
+   - Le calcul, c'est le Parser ou l'Assembler
+
+5. **Ne gère PAS la structure du programme**
+   - Pas de notion de "fonction", "bloc", "scope"
+
+
+## 6. Gestion des erreurs
+
+### 6.1 Erreurs que le Lexer DOIT détecter
+
+```go
+// Caractère illégal
+Input: "MOV R0, @42"
+Error: "Lexical error at line 1, col 9: illegal character '@'"
+
+// Nombre mal formé
+Input: "MOV R0, 0x"
+Error: "Lexical error at line 1, col 9: invalid hexadecimal number"
+
+// Nombre binaire invalide
+Input: "MOV R0, 0b102"
+Error: "Lexical error at line 1, col 11: invalid binary digit '2'"
+```
+
+### 6.2 Erreurs que le Lexer ne doit PAS gérer
+
+```go
+// Syntaxe invalide (c'est le Parser)
+Input: "MOV R0 R1 R2"  → Tokens OK, syntaxe KO
+
+// Registre inexistant (c'est le Validator)
+Input: "MOV R99, 42"   → Tokens OK, registre invalide
+
+// Label non défini (c'est le Parser/Assembler)
+Input: "JMP undefined" → Tokens OK, label non résolu
+```
+
+---
