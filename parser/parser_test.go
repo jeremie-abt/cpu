@@ -7,6 +7,49 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
+func TestParseMemoryError(t *testing.T) {
+	testCases := []struct {
+		name  string
+		input string
+		want  bool
+	}{
+		{
+			name:  "index",
+			input: "0XFF]",
+			want:  false,
+		},
+		{
+			name:  "base + displacement",
+			input: "ebx+5]",
+			want:  false,
+		},
+		{
+			name:  "(Index ∗ Scale) + Displacement",
+			input: "(ebx * 4) + 5]",
+			want:  false,
+		},
+		{
+			name:  "simple not valid operand",
+			input: "5+5+5+5+5+5]",
+			want:  true,
+		},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			lexerObj := lexer.NewLexer()
+			lexerObj.ResetWithInput([]byte(tt.input))
+
+			_, err := parseMemoryOperand(lexerObj)
+
+			if tt.want == (err == nil) {
+				t.Fatalf("parseMemoryOperand() wanted error : %v, got : %v", tt.want, err)
+			}
+		})
+	}
+
+}
+
 func TestParseMemoryOperand(t *testing.T) {
 	testCases := []struct {
 		name  string
@@ -27,6 +70,14 @@ func TestParseMemoryOperand(t *testing.T) {
 				Displacement: 255,
 			},
 		},
+		// TODO: Implement negative: goes with refactoring.
+		//{
+		//	name:  "[negative displacement]",
+		//	input: "[ebp-54]",
+		//	want: &MemoryOperand{
+		//		Displacement: -54,
+		//	},
+		//},
 		{
 			name:  "[displacement binary]",
 			input: "[0b11111111]",

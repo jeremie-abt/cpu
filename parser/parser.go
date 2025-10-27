@@ -136,7 +136,7 @@ func (b *RegisterOperand) Children() []Node     { return nil }
 
 type ImmediateOperand struct {
 	BaseOperand
-	Value int
+	Value int64
 }
 
 func (b *ImmediateOperand) Type() NodeType       { return NodeInstruction }
@@ -265,17 +265,16 @@ func parseIndexAndScale(l lexer.Lexer) (*RegisterName, uint8, error) {
 }
 
 func parseMemoryOperand(l lexer.Lexer) (*MemoryOperand, error) {
-
 	baseOperand := BaseOperand{
 		Line:   l.Line(),
 		Column: l.Column(),
 	}
 
 	tok := l.NextToken()
-	if tok.Type != lexer.TokenOpenBracket {
-		return nil, &parsingError{
-			message: "could not parse memory operand, missing open bracket",
-		}
+	if tok.Type == lexer.TokenOpenBracket {
+		tok = l.NextToken()
+	} else {
+		baseOperand.Column--
 	}
 
 	var base *RegisterName
@@ -284,7 +283,6 @@ func parseMemoryOperand(l lexer.Lexer) (*MemoryOperand, error) {
 	var scaleFactor uint8
 	var err error
 
-	tok = l.NextToken()
 	if tok.Type == lexer.TokenOpenParenthesis {
 		index, scaleFactor, err = parseIndexAndScale(l)
 		if err != nil {

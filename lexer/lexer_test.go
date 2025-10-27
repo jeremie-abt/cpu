@@ -508,3 +508,25 @@ func BenchmarkAllocationLookUpIdentTypeWithLargeFile(b *testing.B) {
 		}
 	})
 }
+
+func Test_toUpperInPlace(t *testing.T) {
+	tests := []struct {
+		name string
+		word []byte
+		want []byte
+	}{
+		{
+			name: "simple hello world",
+			word: []byte("hello WorlD! 12345"),
+			want: []byte("HELLO WORLD! 12345"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			toUpperInPlace(tt.word)
+			if !bytes.Equal(tt.word, tt.want) {
+				t.Errorf("toUpperInPlace() = %v, want %v", tt.word, tt.want)
+			}
+		})
+	}
+}

@@ -43,7 +43,7 @@ type Token struct {
 	Type    TokenType
 	Literal []byte
 	Column  int
-	Value   int
+	Value   int64
 	Line    int
 }
 
@@ -254,8 +254,20 @@ func (i *ImplLexer) skipComment() {
 	}
 }
 
+func toUpperInPlace(word []byte) {
+	for idx, i := range word {
+		if i >= 97 && i <= 122 {
+			word[idx] = i - 32
+		}
+	}
+}
+
 func lookupIdentType(ident []byte) TokenType {
 	if ident[0] == 'R' || ident[0] == 'E' {
+		return TokenRegister
+	}
+	if ident[0] == 'r' || ident[0] == 'e' {
+		toUpperInPlace(ident)
 		return TokenRegister
 	}
 	return TokenInstruction

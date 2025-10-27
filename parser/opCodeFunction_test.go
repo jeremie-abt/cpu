@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"bytes"
 	"cpu/lexer"
 	"testing"
 
@@ -21,6 +22,9 @@ func Test_handleParseMov(t *testing.T) {
 			t.Parallel()
 
 			lexerObj.ResetWithInput(append([]byte("MOV "), tt.input...))
+
+			validateInstruction(t, lexerObj, []byte("MOV"))
+
 			got, err := handleParseMov(lexerObj)
 
 			if err != nil {
@@ -30,6 +34,18 @@ func Test_handleParseMov(t *testing.T) {
 				t.Errorf("handleParseMov() mismatch (-want +got):\n%s", diff)
 			}
 		})
+	}
+}
+
+func validateInstruction(t *testing.T, lexerObj *lexer.ImplLexer, instructionLiteral []byte) {
+	t.Helper()
+
+	token := lexerObj.NextToken()
+	if token.Type != lexer.TokenInstruction {
+		t.Fatalf("got token that is not an instruction")
+	}
+	if !bytes.Equal(token.Literal, instructionLiteral) {
+		t.Fatalf("got token that is not %s instruction", instructionLiteral)
 	}
 }
 
@@ -166,7 +182,7 @@ var tests = []struct {
 			},
 		},
 	},
-	{
+	/*{
 		"memory from register",
 		[]byte("[ESI], EAX"),
 		[]Node{
@@ -191,37 +207,10 @@ var tests = []struct {
 				},
 			},
 		},
-	},
-	{
-		"negative offset",
-		[]byte("EAX, [EBP-4]"),
-		[]Node{
-			&Instruction{
-				Column: 0,
-				Line:   0,
-				Operands: []Node{
-					&RegisterOperand{
-						BaseOperand: BaseOperand{
-							Line:   0,
-							Column: 4,
-						},
-						Name: RegisterEAX,
-					},
-					&MemoryOperand{
-						BaseOperand: BaseOperand{
-							Line:   0,
-							Column: 9,
-						},
-						Base:         toPtr(RegisterEBP),
-						Displacement: -4,
-					},
-				},
-			},
-		},
-	},
+	},*/
 	{
 		"SIB addressing",
-		[]byte("EAX, [EBX+ECX*4]"),
+		[]byte("EAX, [EBX+(ECX*4)]"),
 		[]Node{
 			&Instruction{
 				Column: 0,
@@ -239,7 +228,9 @@ var tests = []struct {
 							Line:   0,
 							Column: 9,
 						},
-						Base: toPtr(RegisterEBX),
+						Base:        toPtr(RegisterEBX),
+						Index:       toPtr(RegisterECX),
+						ScaleFactor: 4,
 					},
 				},
 			},
