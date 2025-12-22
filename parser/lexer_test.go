@@ -3,7 +3,9 @@ package parser
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"strings"
 	"testing"
 
@@ -25,20 +27,23 @@ func TestLexerEdgeCases(t *testing.T) {
 	}
 
 	initStateFunc := func(ctx context.Context, l Lexer) (lexerFunc, error) {
+		var r rune
 		buf := bytes.NewBuffer(make([]byte, 0, 1024))
 
-		r, _, readErr := l.ReadRune()
-		if readErr != nil {
-			return nil, readErr
-		}
+		for r, _, err = l.ReadRune(); !errors.Is(err, io.EOF); r, _, err = l.ReadRune() {
+			if err != nil {
+				return nil, err
+			}
 
-		_, writeErr := buf.WriteRune(r)
-		if writeErr != nil {
-			return nil, writeErr
+			_, err = buf.WriteRune(r)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		if bytes.Contains(buf.Bytes(), []byte("error")) {
-			return nil, fmt.Errorf("contain the word 'error' which is not accepted into my imaginary test grammar")
+			return nil, fmt.Errorf("contain the word 'error' which is not accepted " +
+				"into my imaginary test grammar")
 		}
 
 		return nil, nil

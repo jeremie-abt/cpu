@@ -96,7 +96,7 @@ func Lex(ctx context.Context, l Lexer, initState lexerFunc) error {
 		state, err = state(ctx, l)
 
 		if err != nil {
-			return fmt.Errorf("failed to lex input: %w", err)
+			return fmt.Errorf("%w failed to lex input: %w", LexerError, err)
 		}
 	}
 
