@@ -24,6 +24,15 @@ func readWord(input io.RuneReader) ([]byte, error) {
 		return nil, fmt.Errorf("failed to read rune: %w", err)
 	}
 
+	// In case we have space between to word, we skip it
+	for unicode.IsSpace(r) {
+		r, _, err = input.ReadRune()
+
+		if errors.Is(err, io.EOF) {
+			return nil, io.EOF
+		}
+	}
+
 	for {
 		if unicode.IsSpace(r) {
 			break
