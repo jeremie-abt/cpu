@@ -12,6 +12,64 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var emitToEachWord = func(ctx context.Context, l Lexer) (lexerFunc, error) {
+	var w []byte
+	var err error
+	buf := bytes.NewBufferString("")
+
+	for {
+		w, err = readWord(l)
+		if errors.Is(err, io.EOF) {
+			break
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		buf.Reset()
+		_, err = buf.Write(w)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := l.Emit(ctx, token{
+			value:     bytes.Runes(buf.Bytes()),
+			tokenType: TokenTypeWord,
+		}); err != nil {
+			return nil, err
+		}
+	}
+
+	return nil, nil
+}
+
+// initStateFunc parse just every word composed of letter and return an error if it encounters the word 'error',
+// this function does not emit.
+var initStateFunc = func(ctx context.Context, l Lexer) (lexerFunc, error) {
+	var w []byte
+	var err error
+	buf := bytes.NewBufferString("")
+
+	for w, err = readWord(l); !errors.Is(err, io.EOF); w, err = readWord(l) {
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = buf.Write(w)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if bytes.Contains(buf.Bytes(), []byte("error")) {
+		return nil, fmt.Errorf("contain the word 'error' which is not accepted " +
+			"into my imaginary test grammar")
+	}
+
+	return nil, nil
+}
+
 // TestLexerEdgesCases must only test the lexer codes, not the reel state function.
 func TestLexerEdgeCases(t *testing.T) {
 	var err error
@@ -26,33 +84,41 @@ func TestLexerEdgeCases(t *testing.T) {
 		},
 	}
 
-	initStateFunc := func(ctx context.Context, l Lexer) (lexerFunc, error) {
-		var r rune
-		buf := bytes.NewBuffer(make([]byte, 0, 1024))
-
-		for r, _, err = l.ReadRune(); !errors.Is(err, io.EOF); r, _, err = l.ReadRune() {
-			if err != nil {
-				return nil, err
-			}
-
-			_, err = buf.WriteRune(r)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		if bytes.Contains(buf.Bytes(), []byte("error")) {
-			return nil, fmt.Errorf("contain the word 'error' which is not accepted " +
-				"into my imaginary test grammar")
-		}
-
-		return nil, nil
-	}
-
 	for _, tt := range tests {
 		lexer := NewLexer(strings.NewReader(tt.input))
 		err = Lex(t.Context(), lexer, initStateFunc)
 
 		assert.ErrorIs(t, err, tt.err)
+	}
+}
+
+func getToken(t *testing.T, input []rune, tokenType tokenType) *token {
+	t.Helper()
+
+	return &token{
+		value:     input,
+		tokenType: tokenType,
+	}
+}
+
+func TestLexerGreenPath(t *testing.T) {
+	lexer := NewLexer(strings.NewReader("hello world"))
+	err := Lex(t.Context(), lexer, emitToEachWord)
+
+	assert.NoError(t, err)
+	fmt.Println(len(lexer.tokens))
+
+	select {
+	case tok := <-lexer.tokens:
+		assert.Equal(t, getToken(t, []rune("hello"), TokenTypeWord), tok)
+	case <-t.Context().Done():
+		t.Fatalf("context deadline exceeded, could not get the hello word")
+	}
+
+	select {
+	case tok := <-lexer.tokens:
+		assert.Equal(t, getToken(t, []rune("world"), TokenTypeWord), tok)
+	case <-t.Context().Done():
+		t.Fatalf("context deadline exceeded, could not get the world word")
 	}
 }

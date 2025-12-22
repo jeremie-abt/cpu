@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"time"
 )
 
@@ -20,13 +21,16 @@ const MinLexingBuffSize = 1024
 
 // LexTimeout is the timeout for the lexing process.
 const LexTimeout = time.Second * 10
+const maxBackPressureTolerated = time.Millisecond * 300
+const lexerChanSize = 32
 
 var LexerError = errors.New("lexer error")
 
 type tokenType string
 
 const (
-	NUMBER tokenType = "STATEMENT"
+	TokenTypeStatement tokenType = "STATEMENT"
+	TokenTypeWord      tokenType = "WORD"
 	// ...
 )
 
@@ -43,7 +47,7 @@ type Lexer interface {
 // Emitter is the lexer emitter, basically it just sends a token within an internal chan so that the token
 // can then be parsed.
 type Emitter interface {
-	Emit(token token)
+	Emit(ctx context.Context, token token) error
 }
 
 type lexerFunc func(ctx context.Context, l Lexer) (lexerFunc, error)
@@ -51,7 +55,7 @@ type lexerFunc func(ctx context.Context, l Lexer) (lexerFunc, error)
 type LexerImpl struct {
 	reader bufio.Reader
 
-	tokens chan<- *token
+	tokens chan *token
 }
 
 var _ Lexer = (*LexerImpl)(nil)
@@ -72,9 +76,28 @@ func (l *LexerImpl) UnreadRune() error {
 	return nil
 }
 
-func (l *LexerImpl) Emit(token token) {
-	l.tokens <- &token
-	return
+// TODO: Faire un logger propre
+func (l *LexerImpl) Emit(ctx context.Context, token token) error {
+	var cancel context.CancelFunc
+	timeoutCh := time.After(maxBackPressureTolerated)
+
+	for {
+		ctx, cancel = context.WithDeadline(ctx, time.Now().Add(time.Millisecond*100))
+
+		select {
+		case <-ctx.Done():
+			log.Println("[WARN] context deadline exceeded while emitting token, " +
+				"be careful there might be some back pressure to investigate")
+		case <-timeoutCh:
+			cancel()
+			return fmt.Errorf("exceeded max back pressure tolerance of %x", maxBackPressureTolerated)
+		case l.tokens <- &token:
+			cancel()
+			return nil
+		}
+
+		cancel()
+	}
 }
 
 func NewLexer(input io.Reader) *LexerImpl {
@@ -82,6 +105,7 @@ func NewLexer(input io.Reader) *LexerImpl {
 
 	return &LexerImpl{
 		reader: *r,
+		tokens: make(chan *token, lexerChanSize),
 	}
 }
 
