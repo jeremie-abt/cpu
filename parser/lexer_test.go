@@ -34,8 +34,7 @@ var emitToEachWord = func(ctx context.Context, l Lexer) (lexerFunc, error) {
 		}
 
 		if err := l.Emit(ctx, token{
-			value:     bytes.Runes(buf.Bytes()),
-			tokenType: TokenTypeWord,
+			value: bytes.Runes(buf.Bytes()),
 		}); err != nil {
 			return nil, err
 		}
@@ -92,15 +91,6 @@ func TestLexerEdgeCases(t *testing.T) {
 	}
 }
 
-func getToken(t *testing.T, input []rune, tokenType tokenType) *token {
-	t.Helper()
-
-	return &token{
-		value:     input,
-		tokenType: tokenType,
-	}
-}
-
 func TestLexerGreenPath(t *testing.T) {
 	lexer := NewLexer(strings.NewReader("hello world"))
 	err := Lex(t.Context(), lexer, emitToEachWord)
@@ -110,14 +100,14 @@ func TestLexerGreenPath(t *testing.T) {
 
 	select {
 	case tok := <-lexer.tokens:
-		assert.Equal(t, getToken(t, []rune("hello"), TokenTypeWord), tok)
+		assert.Equal(t, []rune("hello"), tok)
 	case <-t.Context().Done():
 		t.Fatalf("context deadline exceeded, could not get the hello word")
 	}
 
 	select {
 	case tok := <-lexer.tokens:
-		assert.Equal(t, getToken(t, []rune("world"), TokenTypeWord), tok)
+		assert.Equal(t, []rune("world"), tok)
 	case <-t.Context().Done():
 		t.Fatalf("context deadline exceeded, could not get the world word")
 	}

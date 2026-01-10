@@ -26,17 +26,9 @@ const lexerChanSize = 32
 
 var LexerError = errors.New("lexer error")
 
-type tokenType string
-
-const (
-	TokenTypeStatement tokenType = "STATEMENT"
-	TokenTypeWord      tokenType = "WORD"
-	// ...
-)
-
+// token represents a single character, can be a full word for a variable name.
 type token struct {
 	value []rune
-	tokenType
 }
 
 type Lexer interface {
@@ -125,4 +117,10 @@ func Lex(ctx context.Context, l Lexer, initState lexerFunc) error {
 	}
 
 	return nil
+}
+
+// State machine lexing function, this is where the actual code of the lexing process is written
+func defaultLexState(ctx context.Context, l Lexer) (lexerFunc, error) {
+	panic("not implemented")
+	return nil, nil
 }
