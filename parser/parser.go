@@ -1,74 +1,107 @@
-// This file code will receive tokens, verify that they are semantically correct and return a syntax tree.
+// This file code will receive tokens, verify that they are semantically correct and return a syntax nodeTree.
 package parser
 
 type Parser interface {
 	Interpret(t *token)
 }
 
+// TODO: Implement those two interface.
 type Tree interface {
-	// Node push the token into the current node as a child, moove the cursor on the child and make the link
+	// Node push the token into the current node as a child, moove the c on the child and make the link
 	// between the parent and the child.
 	Node(t *token)
 
-	// swap place the token at the current cursor and place the current cursor token as child.
-	// does not move the cursor.
+	// swap place the token at the current c and place the current c token as child.
+	// does not move the c.
 	swap(t *token)
 
 	// Next returns the next token from the lexer.
 	Next() *token
 
-	// Root place the cursor on the root of the tree at the global scope.
+	// Root place the c on the root of the nodeTree at the global scope.
 	Root()
-
-	// SetKey add a key value pair on the current node that can be accessed later.
-	SetKey(key string, val any)
-
-	// GetKey retrieve a token attached to a key
-	GetKey(key string) *token
 }
 
-// Scope maintain a quick table link for variable names, this assume that any symbol can only be
-// referenced by going up the Scope tree, from function to global variable for exemple.
-type Scope struct {
-	parent *Scope
-	s      map[string]*token
+type rootMetadataTree struct {
+	ctx NodeContext
+
+	// c means the current leaf
+	c *leafTree
 }
 
-var test = 54
+type leafTree struct {
+	token *token
 
-func doSomeThing() {}
+	parent   *leafTree
+	children []*leafTree
+}
 
-func premierF() {
-	doSomeThing()
-	secondF()
-
-	// TODO: le scope doit être mit dans le tree direct ? je pense car en sois tu dois dire que tu changes de scope
-	// d'une manière ou d'une autre
-	// Enfaite la question a se poser est comment le changement de scope est matérialisé au sein de l'arbre ?
-	// à Savoir quand j'ai un '
-	// Edit: les bloc n'existent pas en golang, faire des recherche en ASM intel et pratiquer un peu:
-	// -> https://shikaan.github.io/assembly/x86/guide/2024/09/08/x86-64-introduction-hello.html
-	// -> https://genxcyber.com/x86-and-x64-assembly-from-scratch/?utm_source
-	// -> https://gist.github.com/lancejpollard/1db84c233bcd849b237df76b3a6c4d9e?utm_source
-	test1 := 8
-	{
-		test1 = 5
-		{
-			test2 := 5
-		}
+func newLeafTree(t *token) *leafTree {
+	return &leafTree{
+		token: t,
 	}
-	test1 = 5
-	test := 78
-	chocolat := test + 5
 }
 
-func secondF() {
-	test := 5
+func newTree() *rootMetadataTree {
+	return &rootMetadataTree{
+		ctx: new(nodeContextMap),
+	}
 }
 
-// Un truc bete ou tu ajoute quand besoins, quite a sauté des scopes
-func AddScope(parent *Scope) *Scope {
-	return &Scope{parent: parent, s: make(map[string]*token)}
+func (t *rootMetadataTree) Node(token *token) {
+	if t.c == nil {
+		t.c = newLeafTree(token)
+		return
+	}
+
+	leaf := newLeafTree(token)
+	leaf.parent = t.c
+	t.c.children = append(t.c.children, leaf)
+	t.c = leaf
+}
+
+func (t *rootMetadataTree) swap(token *token) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (t *rootMetadataTree) Next() *token {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (t *rootMetadataTree) Root() {
+	//TODO implement me
+	panic("implement me")
+}
+
+// NodeContext define a context for a node where you can store or retrieve data, that will work as closure, going up
+// until your key is found.
+type NodeContext interface {
+	// SetContextKey add a key value pair on the current node that can be accessed later.
+	SetContextKey(key string, val any)
+
+	// GetContextKey retrieve a token attached to a key
+	GetContextKey(key string) *token
+}
+
+type nodeContextMap map[string]*token
+
+func (n nodeContextMap) SetContextKey(key string, val any) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (n nodeContextMap) GetContextKey(key string) *token {
+	//TODO implement me
+	panic("implement me")
+}
+
+// scope maintain a quick table link for variable names, this assume that any symbol can only be
+// referenced by going up the Scope nodeTree, from function to global variable for exemple.
+type scope struct {
+	parent *scope
+	s      map[string]*token
 }
 
 type parserFunc func(t Tree) parserFunc
